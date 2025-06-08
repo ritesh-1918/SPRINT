@@ -2,11 +2,8 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  output: 'export', // Required for static export
-  basePath: '/ClimaSpace', // Set to your repository name
+  output: 'standalone',
   images: {
-    unoptimized: true, // Required for next export with next/image
     remotePatterns: [
       {
         protocol: 'https',
