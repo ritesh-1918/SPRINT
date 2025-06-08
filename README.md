@@ -1,24 +1,35 @@
 # ClimaSpace
 
-A Next.js application for weather visualization and AI travel assistance.
+ClimaSpace is a modern weather application built with Next.js, designed to provide real-time weather information and forecasts. It leverages the power of Gemini API for enhanced data processing and a sleek user interface for an intuitive experience.
 
-This project is built with:
-- Next.js (App Router)
-- React
-- TypeScript
-- ShadCN UI components
-- Tailwind CSS
-- Genkit (for AI features)
+## Features
+
+- **Real-time Weather Data**: Get up-to-the-minute weather conditions for any location.
+- **7-Day Forecast**: Plan your week with detailed weather predictions.
+- **Interactive Map**: Visualize weather patterns and conditions globally.
+- **User-Friendly Interface**: A clean and responsive design for easy navigation.
+- **Gemini API Integration**: Utilizes advanced AI capabilities for accurate and insightful weather analysis.
 
 ## Getting Started
 
-To get this project running locally:
+Follow these steps to set up and run ClimaSpace locally:
 
-1.  **Clone the repository (if you haven't already):**
-    ```bash
-    git clone https://github.com/ritesh-1918/ClimaSpace.git
-    cd ClimaSpace
-    ```
+### Prerequisites
+
+Make sure you have the following installed:
+
+- Node.js (LTS version recommended)
+- npm or Yarn
+- Git
+
+### Installation
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/ritesh-1918/ClimaSpace.git
+   cd ClimaSpace
+   ```
 
 2.  **Install dependencies:**
     ```bash
