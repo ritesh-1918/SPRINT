@@ -1,0 +1,51 @@
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Or your default branch
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use a Node.js version compatible with your project
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static site
+        run: npm run build:static # This uses the new script "next build && next export"
+        env:
+          # Set any NEXT_PUBLIC_ environment variables here if they are not in your committed .env
+          # e.g., NEXT_PUBLIC_OPENCAGE_API_KEY: ${{ secrets.NEXT_PUBLIC_OPENCAGE_API_KEY }}
+          # These secrets need to be configured in your GitHub repository settings
+          NEXT_PUBLIC_OPENCAGE_API_KEY: ${{ vars.NEXT_PUBLIC_OPENCAGE_API_KEY || secrets.NEXT_PUBLIC_OPENCAGE_API_KEY }}
+          NEXT_PUBLIC_OPENWEATHERMAP_API_KEY: ${{ vars.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY || secrets.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY }}
+
+      - name: Add .nojekyll file
+        run: touch ./out/.nojekyll # Prevents GitHub Pages from running Jekyll
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out # The folder Next.js exports to
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        # This action handles deploying the artifact to the gh-pages branch or environment
+        # No need for a separate gh-pages branch if using this modern action
