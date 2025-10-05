@@ -33,7 +33,7 @@ export default function AuthForm({ isSignUp = false }: { isSignUp?: boolean }) {
 
   return (
     <div className="flex flex-col space-y-4">
-      <h1 className="text-2xl font-bold text-center">Check your mail to confirm </h1>
+      <h1 className="text-2xl font-bold text-center">Welcom to SPRINT</h1>
       <p className="text-center">{isSignUp ? 'Sign up' : 'Sign in'} with your email below</p>
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
         <Input
