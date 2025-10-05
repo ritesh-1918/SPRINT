@@ -207,6 +207,19 @@ function DailyForecastDetails({ daily }: { daily: DailyForecast[] }) {
 
   const rainRiskLevel = highestRainChanceDay ? getRainRiskLevel(highestRainChanceDay.precipitationChance) : "N/A";
 
+  const getRiskCardClassNames = (risk: string) => {
+    switch (risk) {
+      case "High":
+        return "bg-red-700 text-white shadow-lg";
+      case "Medium":
+        return "bg-yellow-600 text-white shadow-lg";
+      case "Low":
+        return "bg-green-700 text-white shadow-lg";
+      default:
+        return "bg-blue-900 text-white shadow-lg"; // Default or N/A
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -215,7 +228,7 @@ function DailyForecastDetails({ daily }: { daily: DailyForecast[] }) {
       <CardContent className="space-y-3">
         {/* Parade Rain Risk Outlook */}
         {highestRainChanceDay && (
-          <Card className="bg-blue-900 text-white shadow-lg">
+          <Card className={getRiskCardClassNames(rainRiskLevel)}>
             <CardHeader>
               <CardTitle className="text-lg font-bold">Parade Rain Risk Outlook</CardTitle>
             </CardHeader>
