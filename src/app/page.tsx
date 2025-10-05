@@ -5,39 +5,44 @@ import { useState, useEffect, useCallback } from 'react';
 import { useDebounce } from 'use-debounce';
 import { useToast } from '@/hooks/use-toast';
 import { geocode, reverseGeocode } from '@/lib/location';
-import { fetchWeather } from '@/lib/weather';
-import GlobeView from '@/components/weather/globe-view'; // Corrected import
-// import { SearchBar } from '@/components/search/search-bar';
-import WeatherDisplay from '@/components/weather/weather-display'; // Corrected import
-import type { WeatherData } from '@/types/weather'; // Only import WeatherData
+import GlobeView from '@/components/weather/globe-view';
+import WeatherDisplay from '@/components/weather/weather-display';
+import type { WeatherData } from '@/types/weather';
 import { Loader2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query'; // Keep useQuery
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface GeocodedLocation {
   lat: number;
   lng: number;
   altitude?: number;
-  timezoneName: string; 
+  timezoneName: string;
 }
 
 export default function WeatherDashboardPage() {
   const [locationInput, setLocationInput] = useState<string | null>('');
   const [debouncedLocationInput] = useDebounce(locationInput, 500);
-  const [currentLocation, setCurrentLocation] = useState<GeocodedLocation | null>({ lat: 17.686815, lng: 83.218483, timezoneName: 'Asia/Kolkata' }); // Default to Visakhapatnam, India
-  const [currentLocationName, setCurrentLocationName] = useState<string | null>('Visakhapatnam, India'); // Default to Visakhapatnam, India
+  const [currentLocation, setCurrentLocation] = useState<GeocodedLocation | null>({ lat: 17.686815, lng: 83.218483, timezoneName: 'Asia/Kolkata' });
+  const [currentLocationName, setCurrentLocationName] = useState<string | null>('Visakhapatnam, India');
   const { toast } = useToast();
 
   const { data: weatherData, isLoading: isWeatherLoading, error: weatherError } = useQuery<WeatherData, Error>({
     queryKey: ['weather', currentLocation?.lat, currentLocation?.lng],
-    queryFn: () => {
+    queryFn: async () => {
       if (currentLocation?.lat === undefined || currentLocation?.lng === undefined) {
         return Promise.reject(new Error('Location not defined'));
       }
-      return fetchWeather(currentLocation.lat, currentLocation.lng);
+      const apiUrl = `/api/weather?lat=${currentLocation.lat}&lng=${currentLocation.lng}`;
+      console.log("Client-side fetching from:", apiUrl);
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch weather data');
+      }
+      return response.json();
     },
     enabled: !!currentLocation,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleSearch = useCallback(async (query: string) => {
@@ -148,7 +153,7 @@ export default function WeatherDashboardPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="text-sm text-gray-500 mb-4">
-                  Data Fusion Engine Active: Live Weather (Visual Crossing API) + NASA Earth Observation (GOES Satellite Layer Planned).
+                  Data Fusion Engine Active: Live Weather (OpenWeatherMap API) + NASA Earth Observation (GOES Satellite Layer Planned).
                 </div>
                 <WeatherDisplay
                   weatherData={weatherData ?? null}

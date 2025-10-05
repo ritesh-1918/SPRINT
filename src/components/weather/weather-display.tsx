@@ -33,6 +33,7 @@ interface WeatherDisplayProps {
 }
 
 export default function WeatherDisplay({ weatherData }: WeatherDisplayProps) {
+  console.log('WeatherDisplay received weatherData:', weatherData);
   if (!weatherData) {
     return (
       <Card>
