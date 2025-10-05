@@ -1,61 +1,84 @@
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow for suggesting the optimum travel time
- * based on weather conditions.
- *
- * - suggestOptimumTravelTime - A function that returns AI-suggested times to begin commute.
- * - SuggestOptimumTravelTimeInput - The input type for the suggestOptimumTravelTime function.
- * - SuggestOptimumTravelTimeOutput - The return type for the suggestOptimumTravelTime function.
+ * @fileOverview This file defines a Genkit flow for suggesting the optimum time
+ * for a parade/event based on weather conditions and providing a risk assessment.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const SuggestOptimumTravelTimeInputSchema = z.object({
-  location: z.string().describe('The location for the commute.'),
-  startTime: z.string().describe('The earliest time the commute can begin (ISO format).'),
-  endTime: z.string().describe('The latest time the commute can begin (ISO format).'),
-  commuteDurationMinutes: z.number().describe('The expected duration of the commute in minutes.'),
-});
-export type SuggestOptimumTravelTimeInput = z.infer<typeof SuggestOptimumTravelTimeInputSchema>;
+// --------------------------------------------------------------------------------
+// 1. UPDATED SCHEMA: Focus on Event Start Time and Risk Analysis
+// --------------------------------------------------------------------------------
 
-const SuggestOptimumTravelTimeOutputSchema = z.object({
-  suggestedStartTime: z.string().describe('The AI-suggested start time for the commute (ISO format).'),
-  reason: z.string().describe('The reason for the suggested start time.'),
+const SuggestOptimumEventTimeInputSchema = z.object({
+  location: z.string().describe('The location for the outdoor event/parade.'),
+  earliestTime: z.string().describe('The earliest time the event can begin (ISO format).'),
+  latestTime: z.string().describe('The latest time the event can begin (ISO format).'),
+  // Removed commuteDurationMinutes as it's not relevant for a parade start time.
+  weatherData: z.string().describe('A summary of the current and hourly forecast data, including temperature and precipitation, for the time window.'),
 });
-export type SuggestOptimumTravelTimeOutput = z.infer<typeof SuggestOptimumTravelTimeOutputSchema>;
+export type SuggestOptimumEventTimeInput = z.infer<typeof SuggestOptimumEventTimeInputSchema>;
 
-export async function suggestOptimumTravelTime(
-  input: SuggestOptimumTravelTimeInput
-): Promise<SuggestOptimumTravelTimeOutput> {
-  return suggestOptimumTravelTimeFlow(input);
+const SuggestOptimumEventTimeOutputSchema = z.object({
+  suggestedStartTime: z.string().describe('The AI-suggested start time for the parade/event (ISO format).'),
+  riskSummary: z.string().describe('An analysis of associated risks (e.g., heat stress, heavy rain, wind hazards) and one clear safety precaution for the location and suggested time.'),
+});
+export type SuggestOptimumEventTimeOutput = z.infer<typeof SuggestOptimumEventTimeOutputSchema>;
+
+
+// --------------------------------------------------------------------------------
+// 2. EXPORTED FUNCTION AND FLOW DEFINITION
+// --------------------------------------------------------------------------------
+
+export async function suggestOptimumEventTime(
+  input: SuggestOptimumEventTimeInput
+): Promise<SuggestOptimumEventTimeOutput> {
+  // Use the new flow name
+  return suggestOptimumEventTimeFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'suggestOptimumTravelTimePrompt',
-  input: {schema: SuggestOptimumTravelTimeInputSchema},
-  output: {schema: SuggestOptimumTravelTimeOutputSchema},
-  prompt: `You are a helpful AI assistant that suggests the best time to start a commute, taking into account weather conditions.
-
-  Given the following information, suggest an optimum start time within the provided window, and explain your reasoning:
-
-  Location: {{{location}}}
-  Earliest Start Time: {{{startTime}}}
-  Latest Start Time: {{{endTime}}}
-  Commute Duration: {{{commuteDurationMinutes}}} minutes
-
-  Consider factors like temperature and precipitation to suggest a time that would result in a more comfortable commute.  The response must conform to the schema.
-  `,
-});
-
-const suggestOptimumTravelTimeFlow = ai.defineFlow(
+const suggestOptimumEventTimeFlow = ai.defineFlow(
   {
-    name: 'suggestOptimumTravelTimeFlow',
-    inputSchema: SuggestOptimumTravelTimeInputSchema,
-    outputSchema: SuggestOptimumTravelTimeOutputSchema,
+    name: 'suggestOptimumEventTimeFlow',
+    inputSchema: SuggestOptimumEventTimeInputSchema,
+    outputSchema: SuggestOptimumEventTimeOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    // Call the prompt with the input
+    const {output} = await suggestOptimumEventTimePrompt(input);
     return output!;
   }
 );
+
+
+// --------------------------------------------------------------------------------
+// 3. CORRECTED PROMPT DEFINITION: Using config.system
+// --------------------------------------------------------------------------------
+
+const suggestOptimumEventTimePrompt = ai.definePrompt({
+  name: 'suggestOptimumEventTimePrompt',
+  input: {schema: SuggestOptimumEventTimeInputSchema},
+  output: {schema: SuggestOptimumEventTimeOutputSchema},
+  // !! CRITICAL FIX: Removed the entire 'config' block !! 
+  
+  prompt: ` 
+ **CRITICAL SYSTEM INSTRUCTION:** You are a Public Safety Analyst working for SPRINT - Storm Perception Risk Intelligence Network Tool. Your task is to analyze weather data for a planned outdoor event (a parade). Your response must select the most optimal start time within the window and provide a detailed risk analysis and safety precaution for that selected time. Prioritize minimizing heat stress and avoiding heavy precipitation. 
+ 
+ --- 
+ 
+ Given the following information, perform the following tasks: 
+ 1. Suggest an optimum start time (ISO format) within the provided window that minimizes weather-related risk for a large crowd. 
+ 2. Provide a risk summary, explaining your choice, and detailing the associated risks (e.g., heat stress, heavy rain, wind hazards) for the suggested time. 
+ 3. Include one clear, actionable safety precaution for event organizers. 
+ 
+ Location: {{{location}}} 
+ Earliest Event Start Time: {{{earliestTime}}} 
+ Latest Event Start Time: {{{latestTime}}} 
+ 
+ Weather Data Summary for the Window: 
+ {{{weatherData}}} 
+ 
+ The response must conform strictly to the JSON schema. 
+ `, 
+ });

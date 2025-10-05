@@ -1,6 +1,6 @@
-# ClimaSpace
+# SPRINT
 
-ClimaSpace is a modern weather application built with Next.js, designed to provide real-time weather information and forecasts. It leverages the power of Gemini API for enhanced data processing and a sleek user interface for an intuitive experience.
+SPRINT is a modern weather application built with Next.js, designed to provide real-time weather information and forecasts. It leverages the power of Gemini API for enhanced data processing and a sleek user interface for an intuitive experience.
 
 ## Features
 
@@ -12,7 +12,7 @@ ClimaSpace is a modern weather application built with Next.js, designed to provi
 
 ## Getting Started
 
-Follow these steps to set up and run ClimaSpace locally:
+Follow these steps to set up and run SPRINT locally:
 
 ### Prerequisites
 
@@ -27,8 +27,8 @@ Make sure you have the following installed:
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/ritesh-1918/ClimaSpace.git
-   cd ClimaSpace
+   git clone https://github.com/ritesh-1918/SPRINT.git
+   cd SPRINT
    ```
 
 2.  **Install dependencies:**
@@ -47,7 +47,8 @@ Make sure you have the following installed:
     GEMINI_API_KEY=your_gemini_api_key
     NEXT_PUBLIC_OPENCAGE_API_KEY=your_opencage_api_key
     NEXT_PUBLIC_OPENWEATHERMAP_API_KEY=your_openweathermap_api_key
-    ```
+    NEXT_PUBLIC_GEOAPIFY_API_KEY=your_geoapify_api_key
+        ```
 
 4.  **Run the development server:**
     ```bash

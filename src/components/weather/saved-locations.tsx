@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Bookmark, Trash2, MapPin } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface SavedLocationsProps {
   onSelectLocation: (location: string) => void;
@@ -18,42 +19,99 @@ export default function SavedLocations({ onSelectLocation, currentLocation }: Sa
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedLocations = localStorage.getItem('savedWeatherLocations');
-    if (storedLocations) {
-      setSavedLocations(JSON.parse(storedLocations));
-    }
-  }, []);
+    const fetchSavedLocations = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('saved_locations')
+          .select('name')
+          .eq('user_id', user.id);
 
-  const saveToLocalStorage = (locations: string[]) => {
-    localStorage.setItem('savedWeatherLocations', JSON.stringify(locations));
-  };
-
-  const handleAddLocation = () => {
-    if (currentLocation && !savedLocations.includes(currentLocation)) {
-      if (savedLocations.length >= MAX_SAVED_LOCATIONS) {
-        toast({
-          title: "Limit Reached",
-          description: `You can save a maximum of ${MAX_SAVED_LOCATIONS} locations.`,
-          variant: "destructive",
-        });
-        return;
+        if (error) {
+          console.error('Error fetching saved locations:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load saved locations.",
+            variant: "destructive",
+          });
+        } else if (data) {
+          setSavedLocations(data.map(item => item.name));
+        }
       }
+    };
+
+    fetchSavedLocations();
+  }, [toast]);
+
+  const handleAddLocation = async () => {
+    if (!currentLocation) {
+      toast({ title: "No Location", description: "Search for a location to save it." });
+      return;
+    }
+
+    if (savedLocations.includes(currentLocation)) {
+      toast({ title: "Already Saved", description: `${currentLocation} is already in your saved locations.` });
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "Authentication Required", description: "Please log in to save locations.", variant: "destructive" });
+      return;
+    }
+
+    if (savedLocations.length >= MAX_SAVED_LOCATIONS) {
+      toast({
+        title: "Limit Reached",
+        description: `You can save a maximum of ${MAX_SAVED_LOCATIONS} locations.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('saved_locations')
+      .insert({ user_id: user.id, name: currentLocation });
+
+    if (error) {
+      console.error('Error saving location:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save location.",
+        variant: "destructive",
+      });
+    } else {
       const newLocations = [...savedLocations, currentLocation];
       setSavedLocations(newLocations);
-      saveToLocalStorage(newLocations);
       toast({ title: "Location Saved", description: `${currentLocation} has been added to your saved locations.` });
-    } else if (currentLocation && savedLocations.includes(currentLocation)) {
-       toast({ title: "Already Saved", description: `${currentLocation} is already in your saved locations.` });
-    } else {
-       toast({ title: "No Location", description: "Search for a location to save it." });
     }
   };
 
-  const handleRemoveLocation = (locationToRemove: string) => {
-    const newLocations = savedLocations.filter(loc => loc !== locationToRemove);
-    setSavedLocations(newLocations);
-    saveToLocalStorage(newLocations);
-    toast({ title: "Location Removed", description: `${locationToRemove} has been removed.` });
+  const handleRemoveLocation = async (locationToRemove: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "Authentication Required", description: "Please log in to remove locations.", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('saved_locations')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('name', locationToRemove);
+
+    if (error) {
+      console.error('Error removing location:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove location.",
+        variant: "destructive",
+      });
+    } else {
+      const newLocations = savedLocations.filter(loc => loc !== locationToRemove);
+      setSavedLocations(newLocations);
+      toast({ title: "Location Removed", description: `${locationToRemove} has been removed.` });
+    }
   };
 
   return (

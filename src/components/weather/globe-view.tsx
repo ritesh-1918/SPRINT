@@ -32,10 +32,13 @@ export default function GlobeView({ searchedLocationName, coordinates, onGlobeCo
 
   const handleResize = useCallback(() => {
     if (containerRef.current) {
+      const width = containerRef.current.offsetWidth;
+      const height = Math.max(width * (10 / 16), 400); // Maintain 16:10 aspect ratio with minimum height
       setDimensions({
-        width: containerRef.current.offsetWidth,
-        height: containerRef.current.offsetWidth * (10 / 16) // Maintain 16:10 aspect ratio
+        width: width,
+        height: height
       });
+      console.log('Globe dimensions:', { width, height }); // Add this line
     }
   }, []);
 
@@ -72,7 +75,7 @@ export default function GlobeView({ searchedLocationName, coordinates, onGlobeCo
   };
 
   return (
-    <Card>
+    <Card className="h-full w-full">
       <CardHeader>
         <CardTitle className="font-headline">Global Weather Visualization</CardTitle>
         {searchedLocationName ? (
@@ -81,7 +84,7 @@ export default function GlobeView({ searchedLocationName, coordinates, onGlobeCo
           <CardDescription>Explore weather patterns. Click on the globe or search for a location to focus the view.</CardDescription>
         )}
       </CardHeader>
-      <CardContent ref={containerRef} className="aspect-[16/10] p-0 overflow-hidden relative">
+      <CardContent ref={containerRef} className="w-full h-full aspect-[16/10] p-0 overflow-hidden relative min-h-[400px]">
         {dimensions.width > 0 && dimensions.height > 0 ? (
           <Globe
             ref={globeRef}
@@ -93,6 +96,7 @@ export default function GlobeView({ searchedLocationName, coordinates, onGlobeCo
             pointsData={coordinates ? [{ lat: coordinates.lat, lng: coordinates.lng, size: 0.5, color: 'red' }] : []}
             pointAltitude="size"
             pointColor="color"
+            backgroundColor="#000000" // Explicitly set background color to black
           />
         ) : (
           <div className="flex items-center justify-center h-full">

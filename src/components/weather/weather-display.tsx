@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Thermometer, Droplets, Wind, Gauge, Eye, CloudSun, Sun, Cloud, CloudRain, CloudDrizzle, CalendarDays, Clock, Moon, CloudMoon, Cloudy, CloudLightning, CloudSnow, CloudFog } from 'lucide-react';
 import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 const WeatherIcon = ({ iconName, className }: { iconName: string; className?: string }) => {
   const iconProps = { className: cn("h-5 w-5", className) };
@@ -26,6 +27,9 @@ const WeatherIcon = ({ iconName, className }: { iconName: string; className?: st
 
 interface WeatherDisplayProps {
   weatherData: WeatherData | null;
+  isLoading: boolean;
+  error: Error | null;
+  locationName: string | null;
 }
 
 export default function WeatherDisplay({ weatherData }: WeatherDisplayProps) {
@@ -104,7 +108,7 @@ function CurrentWeatherDetails({ current }: { current: CurrentWeather }) {
         } catch (error) {
           console.warn("Error formatting live time for timezone:", current.locationTimezoneName, error);
            const fallbackDate = new Date(Date.now() + current.timezoneOffsetSeconds * 1000); // Offset from UTC
-           setCurrentTimeAtLocation(format(fallbackDate, "p, EEE, MMM d", { timeZone: 'UTC' }) + " (Offset based)");
+           setCurrentTimeAtLocation(formatInTimeZone(fallbackDate, 'UTC', "p, EEE, MMM d") + " (Offset based)");
         }
       };
       updateLiveTime();
@@ -186,12 +190,45 @@ function HourlyForecastDetails({ hourly, locationTimezoneName }: { hourly: Hourl
 }
 
 function DailyForecastDetails({ daily }: { daily: DailyForecast[] }) {
+  const highestRainChanceDay = daily.reduce((prev, current) => {
+    return (prev.precipitationChance > current.precipitationChance) ? prev : current;
+  }, daily[0]);
+
+  const getRainRiskLevel = (chance: number) => {
+    if (chance >= 70) {
+      return "High";
+    } else if (chance >= 30) {
+      return "Medium";
+    } else {
+      return "Low";
+    }
+  };
+
+  const rainRiskLevel = highestRainChanceDay ? getRainRiskLevel(highestRainChanceDay.precipitationChance) : "N/A";
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-headline flex items-center"><CalendarDays className="mr-2 h-6 w-6" />7-Day Forecast</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Parade Rain Risk Outlook */}
+        {highestRainChanceDay && (
+          <Card className="bg-blue-900 text-white shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold">Parade Rain Risk Outlook</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">
+                Highest chance of rain: <span className="font-semibold">{highestRainChanceDay.dayName} ({format(parseISO(highestRainChanceDay.date), "MMM d")})</span>
+              </p>
+              <p className="text-sm">
+                Precipitation chance: <span className="font-semibold">{highestRainChanceDay.precipitationChance}% ({rainRiskLevel} Risk)</span>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {daily.map((day, index) => (
           <div key={index} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg shadow-sm">
             <div className="w-1/4 font-medium">{day.dayName} <span className="text-xs text-muted-foreground">({format(parseISO(day.date), "MMM d")})</span></div>
