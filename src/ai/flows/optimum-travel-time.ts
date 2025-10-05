@@ -45,9 +45,21 @@ const suggestOptimumEventTimeFlow = ai.defineFlow(
     outputSchema: SuggestOptimumEventTimeOutputSchema,
   },
   async input => {
-    // Call the prompt with the input
-    const {output} = await suggestOptimumEventTimePrompt(input);
-    return output!;
+    try {
+      // Call the prompt with the input
+      const {output} = await suggestOptimumEventTimePrompt(input);
+      if (!output) {
+        throw new Error('Gemini API call returned no output.');
+      }
+      return output;
+    } catch (error) {
+      console.error('Error in Gemini API call:', error);
+      // Return a structured error response
+      return {
+        suggestedStartTime: '', // Or a default/placeholder value
+        riskSummary: `Error processing event time suggestion: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
   }
 );
 
