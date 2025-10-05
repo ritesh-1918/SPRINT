@@ -11,6 +11,7 @@ import type { WeatherData } from '@/types/weather';
 import { Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
+import { LocationSearchBar } from '@/components/common/location-search-bar';
 
 interface GeocodedLocation {
   lat: number;
@@ -45,39 +46,17 @@ export default function WeatherDashboardPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const handleSearch = useCallback(async (query: string) => {
-    if (!query) return;
-    try {
-      const geocoded = await geocode(query);
-      if (geocoded) {
-        setCurrentLocation(geocoded);
-        setCurrentLocationName(query);
-        toast({
-          title: 'Location Found',
-          description: `Displaying weather for ${query}.`,
-        });
-      } else {
-        toast({
-          title: 'Location Not Found',
-          description: 'Please try a different search term.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Geocoding error:', error);
+  const handleLocationSelected = useCallback(
+    (name: string, lat: number, lng: number, timezoneName: string) => {
+      setCurrentLocation({ lat, lng, timezoneName });
+      setCurrentLocationName(name);
       toast({
-        title: 'Search Error',
-        description: 'Failed to fetch location data.',
-        variant: 'destructive',
+        title: 'Location Selected',
+        description: `Displaying weather for ${name}.`,
       });
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    if (debouncedLocationInput) {
-      handleSearch(debouncedLocationInput);
-    }
-  }, [debouncedLocationInput, handleSearch]);
+    },
+    [toast]
+  );
 
   useEffect(() => {
     // Get user's current location on mount
@@ -150,7 +129,12 @@ export default function WeatherDashboardPage() {
             />
           </div>
           <div className="md:col-span-1 overflow-y-auto p-4">
-            <Card>
+            <LocationSearchBar
+              onLocationSelected={handleLocationSelected}
+              initialLocationName={currentLocationName}
+              isLoading={isWeatherLoading}
+            />
+            <Card className="mt-4">
               <CardContent className="p-6">
                 <div className="text-sm text-gray-500 mb-4">
                   Data Fusion Engine Active: Live Weather (OpenWeatherMap API) + NASA Earth Observation (GOES Satellite Layer Planned).
